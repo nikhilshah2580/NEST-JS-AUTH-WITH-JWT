@@ -17,22 +17,25 @@ function AppLayout() {
   const { status } = useAuth();
 
   return (
-    <div className="mx-auto flex min-h-screen w-[calc(100%_-_48px)] max-w-[1320px] flex-col max-sm:w-[calc(100%_-_36px)]">
-      <Navbar />
-      <main className="flex flex-1 flex-col justify-center" aria-live="polite">
-        <Outlet />
-      </main>
-      <footer className="flex min-h-[61px] items-center justify-between border-t border-[#e4e8df] text-[11px] text-[#9ba196]">
-        <span>© 2026 Northstar</span>
-        <span>
-          Built for a fresh start <span className="ml-1 text-[#8da77d]">✳</span>
-        </span>
-      </footer>
-      {status === "loading" && (
-        <span className="sr-only" role="status">
-          Restoring your session
-        </span>
-      )}
+    <div className="min-h-screen min-w-80 bg-[#f6f7f3] font-['DM_Sans'] text-[#202820] antialiased selection:bg-[#dce8d6]">
+      <div className="mx-auto flex min-h-screen w-[calc(100%_-_48px)] max-w-[1320px] flex-col max-sm:w-[calc(100%_-_36px)]">
+        <Navbar />
+        <main className="flex flex-1 flex-col justify-center" aria-live="polite">
+          <Outlet />
+        </main>
+        <footer className="flex min-h-[61px] items-center justify-between border-t border-[#e4e8df] text-[11px] text-[#9ba196]">
+          <span>© 2026 Northstar</span>
+          <span>
+            Built for a fresh start{" "}
+            <span className="ml-1 text-[#8da77d]">✳</span>
+          </span>
+        </footer>
+        {status === "loading" && (
+          <span className="sr-only" role="status">
+            Restoring your session
+          </span>
+        )}
+      </div>
     </div>
   );
 }
