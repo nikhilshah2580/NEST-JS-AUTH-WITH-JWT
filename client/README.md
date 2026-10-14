@@ -24,6 +24,15 @@ Open [http://localhost:5173](http://localhost:5173). The Vite dev server proxies
 
 Create a production build with `npm run build`.
 
+## Frontend structure
+
+- `src/api/apiClient.js` contains the API request helper and auth endpoints.
+- `src/auth/AuthContext.jsx` restores and manages the signed-in session.
+- `src/components/` contains the shared navbar, auth form, and route guards.
+- `src/pages/` contains the home, signup, signin, and profile routes.
+
+Routes are `/`, `/signup`, `/signin`, and the authenticated `/profile`.
+
 ## Roles
 
 New signups receive the `user` role. The welcome screen uses the role returned by the authenticated profile endpoint. To see the admin welcome screen, assign an account the `admin` role in the database, then sign out and back in:
