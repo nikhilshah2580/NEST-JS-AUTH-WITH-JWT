@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { useToast } from "./ToastProvider";
 
 const linkClass = ({ isActive }) =>
   `rounded-lg px-3 py-2 text-sm font-semibold transition ${
@@ -11,6 +12,7 @@ const linkClass = ({ isActive }) =>
 
 export default function Navbar() {
   const { user, status, logout } = useAuth();
+  const showToast = useToast();
   const navigate = useNavigate();
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -18,15 +20,15 @@ export default function Navbar() {
     setLoggingOut(true);
     const error = await logout();
     setLoggingOut(false);
-    navigate("/", {
-      replace: true,
-      state: {
-        notice: error
-          ? `Signed out on this device, but the API could not confirm logout: ${error.message}`
-          : "You have been signed out.",
-        isError: Boolean(error),
-      },
-    });
+    if (error) {
+      showToast(
+        `Signed out on this device, but the API could not confirm logout: ${error.message}`,
+        "error",
+      );
+    } else {
+      showToast("You have been signed out.");
+    }
+    navigate("/", { replace: true });
   }
 
   return (

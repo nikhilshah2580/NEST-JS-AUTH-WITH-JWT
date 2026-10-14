@@ -6,7 +6,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { setAccessToken } from "../api/apiClient";
+import { setAccessToken, setSessionExpiredHandler } from "../api/apiClient";
 import * as authApi from "../api/authApi";
 
 const AuthContext = createContext(null);
@@ -51,6 +51,14 @@ export function AuthProvider({ children }) {
     return () => {
       mounted = false;
     };
+  }, []);
+
+  useEffect(() => {
+    setSessionExpiredHandler(() => {
+      setUser(null);
+      setStatus("anonymous");
+    });
+    return () => setSessionExpiredHandler(null);
   }, []);
 
   const signup = useCallback((details) => authApi.signup(details), []);

@@ -3,9 +3,11 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import AuthPageFrame from "../components/AuthPageFrame";
 import AuthForm from "../components/AuthForm";
 import { useAuth } from "../auth/AuthContext";
+import { useToast } from "../components/ToastProvider";
 
 export default function SignupPage() {
   const { signup, status } = useAuth();
+  const showToast = useToast();
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,10 +26,8 @@ export default function SignupPage() {
     setError("");
     try {
       await signup(details);
-      navigate("/signin", {
-        replace: true,
-        state: { notice: "Account created. Sign in to continue." },
-      });
+      showToast("Account created. Sign in to continue.");
+      navigate("/signin", { replace: true });
     } catch (submitError) {
       setError(submitError.message);
     } finally {

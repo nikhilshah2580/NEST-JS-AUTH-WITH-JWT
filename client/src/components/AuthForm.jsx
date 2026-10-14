@@ -90,8 +90,10 @@ export default function AuthForm({
 
       {error && (
         <p
+          id="auth-form-error"
           className="rounded-lg bg-[#f8e9e5] px-3 py-2 text-xs leading-5 text-[#a14e42]"
           role="alert"
+          aria-live="assertive"
         >
           {error}
         </p>
@@ -101,6 +103,7 @@ export default function AuthForm({
         className="flex w-full items-center justify-between rounded-lg bg-[#416e50] px-4 py-3 font-semibold text-white shadow-[0_5px_12px_#416e5024] transition hover:bg-[#355d43] disabled:cursor-wait disabled:opacity-60"
         type="submit"
         disabled={isSubmitting}
+        aria-busy={isSubmitting}
       >
         <span>
           {isSubmitting

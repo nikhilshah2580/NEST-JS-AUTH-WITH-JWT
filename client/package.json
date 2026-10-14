@@ -5,7 +5,7 @@
   "type": "module",
   "description": "React frontend for the NestJS authentication API",
   "scripts": {
-    "start": "node server.js",
+    "start": "vite preview --host 0.0.0.0",
     "dev": "node server.js",
     "build": "vite build",
     "preview": "vite preview"

@@ -1,8 +1,8 @@
 # Northstar Auth UI
 
-A React and Tailwind CSS frontend for the NestJS authentication API.
+React and Tailwind frontend for the NestJS authentication API.
 
-## Run locally
+## Local development
 
 Start PostgreSQL and the API first:
 
@@ -12,34 +12,43 @@ npm install
 npm run start:dev
 ```
 
-In another terminal, start the frontend:
+Then start the frontend:
 
 ```bash
 cd client
 npm install
-npm start
+npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173). The Vite dev server proxies `/api` to `http://localhost:3003` by default. Set `BACKEND_URL` if the API runs elsewhere. For a deployed frontend, set `VITE_API_URL` to the API base URL, including `/api`.
+Open `http://localhost:5173`. The development server proxies `/api` to
+`http://localhost:3003` by default. Set `BACKEND_URL` if the API runs elsewhere.
 
-Create a production build with `npm run build`.
+## Production deployment
+
+Build the frontend with `npm run build`, then deploy the contents of `dist/` to
+a static hosting service. Enable its single page application fallback so direct
+requests to `/profile`, `/signin`, and other routes serve `index.html`.
+`npm start` previews an existing build; it does not build or provide a
+production static hosting service.
+
+Set `VITE_API_URL` to the API base URL, including `/api`, before building. Vite
+embeds this value in the browser bundle, so changing it after the build has no
+effect. Never put secrets in `VITE_*` variables.
+
+Set the API's `FRONTEND_ORIGIN` to the exact deployed frontend origin and run
+the API with `NODE_ENV=production` behind HTTPS. The refresh token uses an
+HTTP-only, secure, `SameSite=Strict` cookie. Host the frontend and API on the
+same site (such as `app.example.com` and `api.example.com`) for browser cookie
+compatibility. Deployments on unrelated domains need deliberate cookie, CORS,
+and CSRF configuration before they can restore sessions.
 
 ## Frontend structure
 
-- `src/api/apiClient.js` configures Axios, credentials, bearer tokens, and refresh retries.
-- `src/api/authApi.js` contains the authentication endpoint functions.
+- `src/api/` configures API requests and the authentication endpoints.
 - `src/auth/AuthContext.jsx` restores and manages the signed-in session.
-- `src/components/` contains the shared navbar, auth form, and route guards.
+- `src/components/` contains shared UI, the auth form, and the route guard.
 - `src/pages/` contains the home, signup, signin, and profile routes.
 
-Routes are `/`, `/signup`, `/signin`, and the authenticated `/profile`.
-
-## Roles
-
-New signups receive the `user` role. The welcome screen uses the role returned by the authenticated profile endpoint. To see the admin welcome screen, assign an account the `admin` role in the database, then sign out and back in:
-
-```sql
-UPDATE users SET role = 'admin' WHERE email = 'admin@example.com';
-```
-
-The access token is kept in React memory only. The refresh token stays in the API's HTTP-only cookie.
+New signups receive the `user` role. The profile screen displays the role from
+the authenticated API response. The access token stays in memory; the refresh
+token remains in the API's HTTP-only cookie.

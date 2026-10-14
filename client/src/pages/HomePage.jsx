@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
 function Feature({ icon, title, color, children }) {
@@ -29,17 +28,6 @@ function Feature({ icon, title, color, children }) {
 
 export default function HomePage() {
   const { user, status, initializationError } = useAuth();
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [flashNotice] = useState(location.state?.notice);
-  const [flashIsError] = useState(location.state?.isError);
-
-  useEffect(() => {
-    if (location.state?.notice) {
-      navigate(location.pathname, { replace: true, state: null });
-    }
-  }, [location.pathname, location.state, navigate]);
-
   return (
     <>
       {initializationError && (
@@ -50,19 +38,6 @@ export default function HomePage() {
           {initializationError}
         </p>
       )}
-      {flashNotice && (
-        <p
-          className={`mb-6 rounded-lg px-4 py-3 text-sm ${
-            flashIsError
-              ? "bg-[#f8e9e5] text-[#a14e42]"
-              : "bg-[#e8eee3] text-[#405242]"
-          }`}
-          role={flashIsError ? "alert" : "status"}
-        >
-          {flashNotice}
-        </p>
-      )}
-
       <section className="grid items-center gap-9 py-12 md:min-h-[535px] md:grid-cols-2 md:gap-12">
         <div className="md:pl-[5.5%]">
           <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[.06em] text-[#6b7868]">

@@ -2,6 +2,7 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "/api",
+  timeout: 15000,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
@@ -10,9 +11,14 @@ const api = axios.create({
 
 let accessToken = null;
 let refreshRequest = null;
+let onSessionExpired = () => {};
 
 export function setAccessToken(token) {
   accessToken = token;
+}
+
+export function setSessionExpiredHandler(handler) {
+  onSessionExpired = typeof handler === "function" ? handler : () => {};
 }
 
 function getResponseData(response) {
@@ -73,6 +79,7 @@ api.interceptors.response.use(
       return api(originalRequest);
     } catch (refreshError) {
       setAccessToken(null);
+      onSessionExpired();
       if (refreshError.response?.status) {
         refreshError.status = refreshError.response.status;
       }
@@ -87,8 +94,9 @@ api.interceptors.response.use(undefined, (error) => {
 
   if (message) error.message = message;
   else if (!error.response) {
-    error.message =
-      "Could not connect to the API. Check that the backend is running.";
+    error.message = error.code === "ECONNABORTED"
+      ? "The request timed out. Please try again."
+      : "Could not connect to the API. Check your connection and try again.";
   }
 
   if (error.response?.status) error.status = error.response.status;

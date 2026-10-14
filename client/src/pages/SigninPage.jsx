@@ -1,22 +1,16 @@
-import { useEffect, useState } from "react";
-import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import AuthForm from "../components/AuthForm";
 import AuthPageFrame from "../components/AuthPageFrame";
 import { useAuth } from "../auth/AuthContext";
+import { useToast } from "../components/ToastProvider";
 
 export default function SigninPage() {
   const { signin, status } = useAuth();
+  const showToast = useToast();
   const navigate = useNavigate();
-  const location = useLocation();
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [flashNotice] = useState(location.state?.notice);
-
-  useEffect(() => {
-    if (location.state?.notice) {
-      navigate(location.pathname, { replace: true, state: null });
-    }
-  }, [location.pathname, location.state, navigate]);
 
   if (status === "loading") {
     return (
@@ -32,6 +26,7 @@ export default function SigninPage() {
     setError("");
     try {
       await signin(credentials);
+      showToast("You are signed in.");
       navigate("/profile", { replace: true });
     } catch (submitError) {
       setError(submitError.message);
@@ -54,14 +49,6 @@ export default function SigninPage() {
         </>
       }
     >
-      {flashNotice && (
-        <p
-          className="mt-5 rounded-lg bg-[#e8eee3] px-3 py-2 text-xs text-[#405242]"
-          role="status"
-        >
-          {flashNotice}
-        </p>
-      )}
       <AuthForm
         mode="signin"
         onSubmit={handleSignin}
