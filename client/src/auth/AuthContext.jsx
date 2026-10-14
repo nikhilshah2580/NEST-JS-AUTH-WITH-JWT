@@ -6,19 +6,20 @@ import {
   useMemo,
   useState,
 } from "react";
-import { apiClient } from "../api/apiClient";
+import { setAccessToken } from "../api/apiClient";
+import * as authApi from "../api/authApi";
 
 const AuthContext = createContext(null);
 let sessionRestorePromise;
 
 function restoreSession() {
   if (!sessionRestorePromise) {
-    sessionRestorePromise = apiClient
+    sessionRestorePromise = authApi
       .refreshSession()
-      .then(async (tokens) => ({
-        accessToken: tokens.accessToken,
-        user: await apiClient.getProfile(tokens.accessToken),
-      }))
+      .then(async (tokens) => {
+        setAccessToken(tokens.accessToken);
+        return { user: await authApi.getProfile() };
+      })
       .finally(() => {
         sessionRestorePromise = null;
       });
@@ -27,7 +28,6 @@ function restoreSession() {
 }
 
 export function AuthProvider({ children }) {
-  const [accessToken, setAccessToken] = useState(null);
   const [user, setUser] = useState(null);
   const [status, setStatus] = useState("loading");
   const [initializationError, setInitializationError] = useState(null);
@@ -38,12 +38,12 @@ export function AuthProvider({ children }) {
     restoreSession()
       .then((session) => {
         if (!mounted) return;
-        setAccessToken(session.accessToken);
         setUser(session.user);
         setStatus("authenticated");
       })
       .catch((error) => {
         if (!mounted) return;
+        setAccessToken(null);
         if (error.status !== 401) setInitializationError(error.message);
         setStatus("anonymous");
       });
@@ -53,12 +53,18 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  const signup = useCallback((details) => apiClient.signup(details), []);
+  const signup = useCallback((details) => authApi.signup(details), []);
 
   const signin = useCallback(async (credentials) => {
-    const tokens = await apiClient.signin(credentials);
-    const profile = await apiClient.getProfile(tokens.accessToken);
+    const tokens = await authApi.signin(credentials);
     setAccessToken(tokens.accessToken);
+    let profile;
+    try {
+      profile = await authApi.getProfile();
+    } catch (error) {
+      setAccessToken(null);
+      throw error;
+    }
     setUser(profile);
     setStatus("authenticated");
     setInitializationError(null);
@@ -68,7 +74,7 @@ export function AuthProvider({ children }) {
   const logout = useCallback(async () => {
     let logoutError = null;
     try {
-      await apiClient.logout();
+      await authApi.logout();
     } catch (error) {
       logoutError = error;
     } finally {
@@ -82,14 +88,13 @@ export function AuthProvider({ children }) {
   const value = useMemo(
     () => ({
       user,
-      accessToken,
       status,
       initializationError,
       signup,
       signin,
       logout,
     }),
-    [user, accessToken, status, initializationError, signup, signin, logout],
+    [user, status, initializationError, signup, signin, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

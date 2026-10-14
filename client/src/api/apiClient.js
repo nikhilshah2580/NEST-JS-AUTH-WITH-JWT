@@ -1,75 +1,102 @@
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "/api").replace(
-  /\/+$/,
-  "",
+import axios from "axios";
+
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || "/api",
+  withCredentials: true,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+let accessToken = null;
+let refreshRequest = null;
+
+export function setAccessToken(token) {
+  accessToken = token;
+}
+
+function getResponseData(response) {
+  return response.data?.data ?? response.data;
+}
+
+function isAuthEndpoint(url = "") {
+  return ["/auth/signup", "/auth/login", "/auth/refresh", "/auth/logout"].some(
+    (endpoint) => url.includes(endpoint),
+  );
+}
+
+api.interceptors.request.use((config) => {
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`;
+  }
+  return config;
+});
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    const status = error.response?.status;
+
+    if (status !== 401 || !originalRequest || originalRequest._retry) {
+      if (status) error.status = status;
+      return Promise.reject(error);
+    }
+
+    if (isAuthEndpoint(originalRequest.url)) {
+      error.status = status;
+      return Promise.reject(error);
+    }
+
+    originalRequest._retry = true;
+
+    try {
+      if (!refreshRequest) {
+        refreshRequest = api
+          .post("/auth/refresh")
+          .then((response) => getResponseData(response))
+          .then((tokens) => {
+            if (!tokens?.accessToken) {
+              throw new Error(
+                "The refresh response did not include an access token.",
+              );
+            }
+            setAccessToken(tokens.accessToken);
+            return tokens.accessToken;
+          })
+          .finally(() => {
+            refreshRequest = null;
+          });
+      }
+
+      await refreshRequest;
+      return api(originalRequest);
+    } catch (refreshError) {
+      setAccessToken(null);
+      if (refreshError.response?.status) {
+        refreshError.status = refreshError.response.status;
+      }
+      return Promise.reject(refreshError);
+    }
+  },
 );
 
-export class ApiError extends Error {
-  constructor(message, status) {
-    super(message);
-    this.name = "ApiError";
-    this.status = status;
+api.interceptors.response.use(undefined, (error) => {
+  const body = error.response?.data;
+  const message = body?.errors?.length ? body.errors.join(". ") : body?.message;
+
+  if (message) error.message = message;
+  else if (!error.response) {
+    error.message =
+      "Could not connect to the API. Check that the backend is running.";
   }
+
+  if (error.response?.status) error.status = error.response.status;
+  return Promise.reject(error);
+});
+
+export default api;
+
+export function unwrapApiResponse(response) {
+  return getResponseData(response);
 }
-
-async function request(path, { accessToken, ...options } = {}) {
-  const headers = new Headers(options.headers || {});
-  if (options.body) headers.set("Content-Type", "application/json");
-  if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
-
-  let response;
-  try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
-      ...options,
-      headers,
-      credentials: "include",
-    });
-  } catch {
-    throw new ApiError(
-      "Could not connect to the API. Check that the backend is running.",
-    );
-  }
-
-  let body = null;
-  try {
-    body = await response.json();
-  } catch {
-    if (response.ok) {
-      throw new ApiError(
-        "The API returned an invalid response.",
-        response.status,
-      );
-    }
-  }
-
-  if (!response.ok) {
-    const message = body?.errors?.length
-      ? body.errors.join(". ")
-      : body?.message;
-    throw new ApiError(
-      message || `Request failed (${response.status}).`,
-      response.status,
-    );
-  }
-
-  return body?.data ?? body;
-}
-
-export const apiClient = {
-  signup: (details) =>
-    request("/auth/signup", {
-      method: "POST",
-      body: JSON.stringify(details),
-    }),
-
-  signin: (credentials) =>
-    request("/auth/login", {
-      method: "POST",
-      body: JSON.stringify(credentials),
-    }),
-
-  getProfile: (accessToken) => request("/auth/profile", { accessToken }),
-
-  refreshSession: () => request("/auth/refresh", { method: "POST" }),
-
-  logout: () => request("/auth/logout", { method: "POST" }),
-};

@@ -20,13 +20,14 @@ npm install
 npm start
 ```
 
-Open [http://localhost:5173](http://localhost:5173). The Vite dev server proxies `/api` to `http://localhost:3003` by default. Set `BACKEND_URL` if the API runs elsewhere. For a deployed frontend, set `VITE_API_BASE_URL` to the API base URL, including `/api`.
+Open [http://localhost:5173](http://localhost:5173). The Vite dev server proxies `/api` to `http://localhost:3003` by default. Set `BACKEND_URL` if the API runs elsewhere. For a deployed frontend, set `VITE_API_URL` to the API base URL, including `/api`.
 
 Create a production build with `npm run build`.
 
 ## Frontend structure
 
-- `src/api/apiClient.js` contains the API request helper and auth endpoints.
+- `src/api/apiClient.js` configures Axios, credentials, bearer tokens, and refresh retries.
+- `src/api/authApi.js` contains the authentication endpoint functions.
 - `src/auth/AuthContext.jsx` restores and manages the signed-in session.
 - `src/components/` contains the shared navbar, auth form, and route guards.
 - `src/pages/` contains the home, signup, signin, and profile routes.
